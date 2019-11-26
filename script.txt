@@ -1,0 +1,80 @@
+CREATE TABLE Cliente
+(
+	Id_Cliente   integer,
+	Nome         varchar2(30),
+	Uf           char2(2),
+	Celular      varchar2(14)
+);
+
+CREATE TABLE Financiamento
+(
+	Id_Financiamento 	integer,
+	Id_Cliente   		integer,
+	Tipo_Financiamento  varchar2(50),
+	Valor_Total         Number(12,2),
+	Data_Vencimento		date	
+);
+
+CREATE TABLE Parcela
+(
+	Id_Parcela			integer,
+	Id_Financiamento 	integer,
+	Num_Parcela			integer,
+	Valor_Parcela		number(12,2),
+	Data_Vencimento		date,
+	Data_Pagamento		date
+);
+
+--PK
+Alter table Cliente add constraint Id_Cliente_PK primary key (Id_Cliente);
+Alter table Financiamento add constraint Id_Financiamento_PK primary key (Id_Financiamento);
+Alter table Parcela add constraint Id_Parcela_PK primary key (Id_Parcela);
+
+
+--1- 
+select
+	c.Nome
+from Cliente c
+inner join Financiamento f
+	on c.Id_Cliente = f.Id_Cliente
+cross apply ( 
+			select count(*) total 
+			from Parcela p 
+			where p.Id_Financiamento = f.Id_Financiamento
+			  
+			) countP
+
+where
+	c.Uf = 'SP'
+
+
+--2- 
+select
+	c.Nome
+from Cliente c
+inner join Financiamento f
+	on c.Id_Cliente = f.Id_Cliente
+inner join Parcela p 
+	on p.Id_Financiamento = f.Id_Financiamento
+
+where
+	Data_Pagamento is null
+and (SYSDATE + 5) > p.Data_Vencimento
+and ROWNUM <= 4
+	
+
+--3- 
+select 
+	c.Nome
+from Cliente c
+inner join Financiamento f
+	on c.Id_Cliente = f.Id_Cliente
+cross apply ( 
+			select count(*) total 
+			from Parcela p 
+			where p.Id_Financiamento = f.Id_Financiamento
+			and DateAdd(p.Data_Pagamento, '1', 10) > p.Data_Vencimento
+			) countP
+where 
+	f.Valor_Total > 10000.00
+and countP.total >= 2
